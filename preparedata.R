@@ -66,11 +66,13 @@ str_d <- streets_names_gr_coord %>%
   group_by(katunimi) %>%
   arrange(osoitenumero) %>%
   do(first_last(.)) %>%
-  ungroup %>%
+  ungroup() %>%
   select(katunimi, gatan, osoitenumero, e, n)
 
 # Remove duplicates, i.e. when there was only one member in a group
 str_d <- str_d[!duplicated(str_d),]
+# A few streets without coords so deleting them
+str_d <- str_d[!is.na(str_d$e),]
 
 # Calculate total length of the streets (based on addresses). 
 # Streets with only one address are just 0 m.
@@ -83,7 +85,6 @@ street_length <- streets_names_gr_coord %>%
                                       ifelse(m > 1000 & m <= 3000, "1-3 km",
                                              "Over 3 km")))))
 
-# A few streets without coords so deleting them
 street_length <- street_length[!is.na(street_length$m),]
 
 # Save objects for the web app
