@@ -29,8 +29,6 @@ server <- function(input, output, session) {
   
   output$map <- renderLeaflet({
     
-    #withProgress(message = 'Making map')
-    
     leaflet(coord) %>%
       addTiles() %>%
       fitBounds(~min(e), ~min(n), ~max(e), ~max(n))
