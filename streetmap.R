@@ -18,8 +18,12 @@ ui <- bootstrapPage(
                                                   "Long (1000-3000 m)" = "1-3 km",
                                                   "Extra long (3000- m)" = "Over 3 km"),
                                    selected = NULL),
-                selectizeInput(inputId = 'streets', 
-                               label = 'Select up to 10 streets by name', 
+                selectInput(inputId = "lang", 
+                            label = "Choose language", 
+                            choices = c("Finnish", "Swedish"),
+                            selected = "Finnish"),
+                selectizeInput(inputId = "streets", 
+                               label = "Select up to 10 streets by name", 
                                choices = NULL, 
                                options = list(maxItems = 10))
   )
@@ -38,25 +42,25 @@ server <- function(input, output, session) {
   filteredData <- reactive({
     if ( is.null(input$range) )  
       return(coord)
-    semi_join(coord, len[len$range == input$range,], by = "katunimi")
+    d <- semi_join(coord, len[len$range == input$range,], by = "katunimi")
   })
   
- 
+
+  observe(
+    updateSelectizeInput(session, 
+                         inputId = 'streets', 
+                         choices = if ( input$lang == 'Finnish' ) filteredData()$katunimi else filteredData()$gatan
+    )
+  )
+  
   streetData <- reactive({
     if ( is.null(input$streets) )
       return(filteredData())
     
-    isolate(filteredData()[filteredData()$katunimi %in% input$streets, ])
+    isolate(filteredData()[if ( input$lang == 'Finnish' ) filteredData()$katunimi %in% input$streets
+                           else filteredData()$gatan %in% input$streets, ])
     
   })
-  
-  
-  observe(
-    updateSelectizeInput(session, 
-                         inputId = 'streets', 
-                         choices = filteredData()$katunimi 
-    )
-  )
   
   
   icon.ion <- makeAwesomeIcon(icon = 'android-walk', 
@@ -64,9 +68,8 @@ server <- function(input, output, session) {
                               library='ion')
   
 
-  
   observeEvent(c(input$range,input$streets),{
-  
+    
     leafletProxy("map") %>%
       clearMarkers() %>%
       clearMarkerClusters() %>%
@@ -74,12 +77,12 @@ server <- function(input, output, session) {
                         lng  = ~e,
                         lat  = ~n,
                         icon = icon.ion,
-                        popup = ~paste0(katunimi, ' ',osoitenumero, '<br/>',
+                        popup = ~paste0(if ( input$lang == 'Finnish' ) katunimi else gatan, ' ',osoitenumero, '<br/>',
                                        '<a href="', gviewurl, '">Google Street View</a>'),
                         clusterOptions = markerClusterOptions()) %>%
       fitBounds(.,
-                min(streetData()$e),min(streetData()$n),
-                max(streetData()$e),max(streetData()$n))
+                min(streetData()$e), min(streetData()$n),
+                max(streetData()$e), max(streetData()$n))
   })
   
 
