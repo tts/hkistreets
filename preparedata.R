@@ -17,8 +17,9 @@ names <- read_html(names_url) %>%
   as.data.frame()
 
 names(names) <- "katunimi"
+write.csv(names, "streetnames.csv")
 
-# Get Helsinki addresses with coordinates
+# Get addresses with coordinates
 url <- "kartta.hel.fi/ws/geoserver/avoindata/wfs?version=1.1.0&request=GetFeature&typeName=avoindata:Helsinki_osoiteluettelo&outputFormat=csv"
 filename <- "data.csv"
 download.file(url = url, destfile = filename, method='curl')
@@ -57,7 +58,7 @@ setDT(streets_names_gr_coord)[, dist := distGeo(matrix(c(e, n), ncol = 2),
                                                 matrix(c(e_next, n_next), ncol = 2))]
 
 # Select 1st and last members of each group of streets.
-# The idea is to render only two points on the map per street.
+# The idea is to render max two points on the map per street.
 first_last <- function(x) {
   bind_rows(slice(x, 1), slice(x, n()))
 }
@@ -67,12 +68,19 @@ str_d <- streets_names_gr_coord %>%
   arrange(osoitenumero) %>%
   do(first_last(.)) %>%
   ungroup() %>%
-  select(katunimi, gatan, osoitenumero, e, n)
+  select(katunimi, gatan, osoitenumero, e, n) 
 
 # Remove duplicates, i.e. when there was only one member in a group
 str_d <- str_d[!duplicated(str_d),]
 # A few streets without coords so deleting them
 str_d <- str_d[!is.na(str_d$e),]
+
+# Google View url 
+str_d$gviewurl <- paste0("http://maps.google.com/maps?q=&layer=c&cbll=", 
+                         str_d$n, 
+                         ",", 
+                         str_d$e, 
+                         "&cbp=11,0,0,0,0")
 
 # Calculate total length of the streets (based on addresses). 
 # Streets with only one address are just 0 m.
