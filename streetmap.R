@@ -19,7 +19,7 @@ ui <- bootstrapPage(
                                                   "Extra long (3000- m)" = "Over 3 km"),
                                    selected = NULL),
                 selectizeInput(inputId = 'streets', 
-                               label = 'Streets', 
+                               label = 'Select up to 10 streets by name', 
                                choices = NULL, 
                                options = list(maxItems = 10))
   )
@@ -60,11 +60,13 @@ server <- function(input, output, session) {
   
   
   icon.ion <- makeAwesomeIcon(icon = 'android-walk', 
-                              markerColor = 'green',
+                              markerColor = 'yellow',
                               library='ion')
   
+
   
   observeEvent(c(input$range,input$streets),{
+  
     leafletProxy("map") %>%
       clearMarkers() %>%
       clearMarkerClusters() %>%
@@ -72,14 +74,15 @@ server <- function(input, output, session) {
                         lng  = ~e,
                         lat  = ~n,
                         icon = icon.ion,
-                        popup = ~paste0(katunimi, " ", osoitenumero),
+                        popup = ~paste0(katunimi, ' ',osoitenumero, '<br/>',
+                                       '<a href="', gviewurl, '">Google Street View</a>'),
                         clusterOptions = markerClusterOptions()) %>%
       fitBounds(.,
                 min(streetData()$e),min(streetData()$n),
                 max(streetData()$e),max(streetData()$n))
   })
   
-  
+
 }
 
 shinyApp(ui, server)
