@@ -10,14 +10,12 @@ ui <- bootstrapPage(
   leafletOutput("map", width = "100%", height = "100%"),
   absolutePanel(bottom = 40, right = 20,
                 draggable = TRUE,
-                checkboxGroupInput(inputId = "range",
-                                   label = "Length of the street",
-                                   choices = list("Tiny (0 m)" = "Zero",
-                                                  "Short (-500 m)" = "Under 500 m",
-                                                  "Medium (500-1000 m)" = "500-1000 m",
-                                                  "Long (1000-3000 m)" = "1-3 km",
-                                                  "Extra long (3000- m)" = "Over 3 km"),
-                                   selected = NULL),
+                selectInput(inputId = "range",
+                            label = "Street length",
+                            choices = c("Short, i.e. only 0 to 1 addresses",
+                                        "Under 500 m","500-1000 m", "1-3 km", "Over 3 km",
+                                        "All"),
+                            selected = "All"),
                 selectInput(inputId = "lang", 
                             label = "Choose language", 
                             choices = c("Finnish", "Swedish"),
@@ -40,9 +38,9 @@ server <- function(input, output, session) {
   
   
   filteredData <- reactive({
-    if ( is.null(input$range) )  
+    if ( (input$range) == "All" )  
       return(coord)
-    d <- semi_join(coord, len[len$range == input$range,], by = "katunimi")
+    semi_join(coord, len[len$range == input$range,], by = "katunimi")
   })
   
 
@@ -52,7 +50,8 @@ server <- function(input, output, session) {
                          choices = if ( input$lang == 'Finnish' ) filteredData()$katunimi else filteredData()$gatan
     )
   )
-  
+ 
+   
   streetData <- reactive({
     if ( is.null(input$streets) )
       return(filteredData())
@@ -68,7 +67,7 @@ server <- function(input, output, session) {
                               library='ion')
   
 
-  observeEvent(c(input$range,input$streets),{
+  observeEvent(c(input$range,input$streets, input$lang),{
     
     leafletProxy("map") %>%
       clearMarkers() %>%
@@ -78,6 +77,8 @@ server <- function(input, output, session) {
                         lat  = ~n,
                         icon = icon.ion,
                         popup = ~paste0(if ( input$lang == 'Finnish' ) katunimi else gatan, ' ',osoitenumero, '<br/>',
+                                        if ( input$lang == 'Finnish' ) gatan else katunimi, ' ',osoitenumero, '<br/>',
+                                      #  'Length (approx): m<br/>',
                                        '<a href="', gviewurl, '">Google Street View</a>'),
                         clusterOptions = markerClusterOptions()) %>%
       fitBounds(.,
