@@ -87,7 +87,7 @@ str_d$gviewurl <- paste0("http://maps.google.com/maps?q=&layer=c&cbll=",
 street_length <- streets_names_gr_coord %>%
   group_by(katunimi, gatan) %>%
   summarise(m = ceiling(sum(dist) * 100 / 1000)) %>%
-  mutate(range = ifelse(m == 0, "Zero",
+  mutate(range = ifelse(m == 0, "Short, i.e. only 0 to 1 addresses",
                         ifelse(m > 0 & m <= 500, "Under 500 m",
                                ifelse(m > 500 & m <= 1000, "500-1000 m",
                                       ifelse(m > 1000 & m <= 3000, "1-3 km",
