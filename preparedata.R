@@ -95,6 +95,7 @@ street_length <- streets_names_gr_coord %>%
 
 street_length <- street_length[!is.na(street_length$m),]
 
+coord_len <- inner_join(str_d, street_length)
+
 # Save objects for the web app
-saveRDS(str_d, "coord.RDS")
-saveRDS(street_length, "length.RDS")
+saveRDS(coord_len, "strdata.RDS")
