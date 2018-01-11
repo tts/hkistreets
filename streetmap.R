@@ -2,8 +2,7 @@ library(shiny)
 library(leaflet)
 library(dplyr)
 
-coord <- readRDS("coord.RDS")
-len <- readRDS("length.RDS")
+data <- readRDS("strdata.RDS")
 
 ui <- bootstrapPage(
   tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
@@ -13,7 +12,7 @@ ui <- bootstrapPage(
                 selectInput(inputId = "range",
                             label = "Street length",
                             choices = c("Short, i.e. only 0 to 1 addresses",
-                                        "Under 500 m","500-1000 m", "1-3 km", "Over 3 km",
+                                        "Under 500 m", "500-1000 m", "1-3 km", "Over 3 km",
                                         "All"),
                             selected = "All"),
                 selectInput(inputId = "lang", 
@@ -30,34 +29,30 @@ ui <- bootstrapPage(
 server <- function(input, output, session) {
   
   output$map <- renderLeaflet({
-    
-    leaflet(coord) %>%
+    leaflet(data) %>%
       addTiles() %>%
       fitBounds(~min(e), ~min(n), ~max(e), ~max(n))
   })
   
-  
-  filteredData <- reactive({
+  filteredRange <- reactive({
     if ( (input$range) == "All" )  
-      return(coord)
-    semi_join(coord, len[len$range == input$range,], by = "katunimi")
+      return(data)
+    data %>% 
+      filter(range == input$range)
   })
   
-
   observe(
     updateSelectizeInput(session, 
                          inputId = 'streets', 
-                         choices = if ( input$lang == 'Finnish' ) filteredData()$katunimi else filteredData()$gatan
+                         choices = filteredRange()[[input$lang]]
     )
   )
  
    
-  streetData <- reactive({
+  filteredStreets <- reactive({
     if ( is.null(input$streets) )
-      return(filteredData())
-    
-    isolate(filteredData()[if ( input$lang == 'Finnish' ) filteredData()$katunimi %in% input$streets
-                           else filteredData()$gatan %in% input$streets, ])
+      return(filteredRange())
+    filteredRange()[filteredRange()[[isolate(input$lang)]] == input$streets, ]
     
   })
   
@@ -67,23 +62,23 @@ server <- function(input, output, session) {
                               library='ion')
   
 
-  observeEvent(c(input$range,input$streets, input$lang),{
+  observeEvent(c(input$range, input$streets),{
     
     leafletProxy("map") %>%
       clearMarkers() %>%
       clearMarkerClusters() %>%
-      addAwesomeMarkers(data = streetData(),
+      addAwesomeMarkers(data = filteredStreets(),
                         lng  = ~e,
                         lat  = ~n,
                         icon = icon.ion,
-                        popup = ~paste0(if ( input$lang == 'Finnish' ) katunimi else gatan, ' ',osoitenumero, '<br/>',
-                                        if ( input$lang == 'Finnish' ) gatan else katunimi, ' ',osoitenumero, '<br/>',
-                                      #  'Length (approx): m<br/>',
-                                       '<a href="', gviewurl, '">Google Street View</a>'),
+                        popup = ~paste0('<b>', if ( input$lang == 'Finnish' ) Finnish else Swedish, ' ', osoitenumero, '</b>', '<br/>',
+                                        if ( input$lang == 'Finnish' ) Swedish else Finnish, ' ', osoitenumero, '<br/>',
+                                       'Length (approx): ', m, 'm<br/>',
+                                       '<a href="', gviewurl, '">Google Street View (could be missing)</a>'),
                         clusterOptions = markerClusterOptions()) %>%
       fitBounds(.,
-                min(streetData()$e), min(streetData()$n),
-                max(streetData()$e), max(streetData()$n))
+                min(filteredStreets()$e), min(filteredStreets()$n),
+                max(filteredStreets()$e), max(filteredStreets()$n))
   })
   
 
