@@ -11,7 +11,7 @@ ui <- bootstrapPage(
                 draggable = TRUE,
                 selectInput(inputId = "range",
                             label = "Street length",
-                            choices = c("Short, i.e. only 0 to 1 addresses",
+                            choices = c("Short, only 1 address",
                                         "Under 500 m", "500-1000 m", "1-3 km", "Over 3 km",
                                         "All"),
                             selected = "All"),
@@ -52,7 +52,7 @@ server <- function(input, output, session) {
   filteredStreets <- reactive({
     if ( is.null(input$streets) )
       return(filteredRange())
-    filteredRange()[filteredRange()[[isolate(input$lang)]] == input$streets, ]
+    filteredRange()[filteredRange()[[isolate(input$lang)]] %in% input$streets, ]
     
   })
   
@@ -71,10 +71,10 @@ server <- function(input, output, session) {
                         lng  = ~e,
                         lat  = ~n,
                         icon = icon.ion,
-                        popup = ~paste0('<b>', if ( input$lang == 'Finnish' ) Finnish else Swedish, ' ', osoitenumero, '</b>', '<br/>',
-                                        if ( input$lang == 'Finnish' ) Swedish else Finnish, ' ', osoitenumero, '<br/>',
-                                       'Length (approx): ', m, 'm<br/>',
-                                       '<a href="', gviewurl, '">Google Street View (could be missing)</a>'),
+                        popup = ~paste0('<b>', Finnish, ' ' , osoitenumero, '</b>', '<br/>',
+                                        Swedish, ' ', osoitenumero, '<br/>',
+                                       'Length, approx. (0=only 1 address): ', m, ' m<br/>',
+                                       '<a href="', gviewurl, '">Google Street View (if available)</a>'),
                         clusterOptions = markerClusterOptions()) %>%
       fitBounds(.,
                 min(filteredStreets()$e), min(filteredStreets()$n),
