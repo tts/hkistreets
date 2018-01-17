@@ -22,7 +22,8 @@ ui <- bootstrapPage(
                 selectizeInput(inputId = "streets", 
                                label = "Select up to 10 streets by name", 
                                choices = NULL, 
-                               options = list(maxItems = 10))
+                               options = list(maxItems = 10)),
+                downloadButton("data_hki_streets", "Download")
   )
 )
 
@@ -58,7 +59,7 @@ server <- function(input, output, session) {
   
   
   icon.ion <- makeAwesomeIcon(icon = 'android-walk', 
-                              markerColor = 'yellow',
+                              markerColor = 'orange',
                               library='ion')
   
 
@@ -73,7 +74,8 @@ server <- function(input, output, session) {
                         icon = icon.ion,
                         popup = ~paste0('<b>', Finnish, ' ' , osoitenumero, '</b>', '<br/>',
                                         Swedish, ' ', osoitenumero, '<br/>',
-                                       'Length, approx. (0=only 1 address): ', m, ' m<br/>',
+                                       'Length (roughly). : ', m, ' m<br/>',
+                                       '0 m means only 1 address', '<br/>',
                                        '<a href="', gviewurl, '">Google Street View (if available)</a>'),
                         clusterOptions = markerClusterOptions()) %>%
       fitBounds(.,
@@ -81,6 +83,18 @@ server <- function(input, output, session) {
                 max(filteredStreets()$e), max(filteredStreets()$n))
   })
   
+  
+  output$data_hki_streets = downloadHandler(
+    filename = function() {
+      filename = 'data_hki_streets.csv'
+    },
+    content = function(file) {
+     {
+        write.csv(filteredStreets(), 'temp.csv', row.names = FALSE)
+        file.rename('temp.csv', file)    
+      } 
+    }
+  )
 
 }
 
