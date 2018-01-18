@@ -1,3 +1,3 @@
 # hkistreets
 
-Gather open data about streets of the city of Helsinki for an [interactive web app](https://ttso.shinyapps.io/hkistreets).
+Prepares open data about streets of the city of Helsinki, calculates their approximate length, and builds an [interactive Shiny web app](https://ttso.shinyapps.io/hkistreets).
