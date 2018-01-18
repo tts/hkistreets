@@ -31,9 +31,14 @@ server <- function(input, output, session) {
   
   output$map <- renderLeaflet({
     leaflet(data) %>%
-      addTiles() %>%
+      addTiles(urlTemplate = "https://cdn.digitransit.fi/map/v1/hsl-map/{z}/{x}/{y}.png",
+               attribution = 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors 
+                       <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>. 
+                       Data source: <a href="http://www.hri.fi/fi/dataset/helsingin-osoiteluettelo">Addresses of the city of Helsinki</a> 
+                       <a href="http://creativecommons.org/licenses/by/4.0/deed.fi">CC BY 4.0</a>') %>% 
       fitBounds(~min(e), ~min(n), ~max(e), ~max(n))
   })
+  
   
   filteredRange <- reactive({
     if ( (input$range) == "All" )  
@@ -42,6 +47,7 @@ server <- function(input, output, session) {
       filter(range == input$range)
   })
   
+  
   observe(
     updateSelectizeInput(session, 
                          inputId = 'streets', 
@@ -49,7 +55,7 @@ server <- function(input, output, session) {
     )
   )
  
-   
+  
   filteredStreets <- reactive({
     if ( is.null(input$streets) )
       return(filteredRange())
@@ -72,11 +78,11 @@ server <- function(input, output, session) {
                         lng  = ~e,
                         lat  = ~n,
                         icon = icon.ion,
-                        popup = ~paste0('<b>', Finnish, ' ' , osoitenumero, '</b>', '<br/>',
-                                        Swedish, ' ', osoitenumero, '<br/>',
-                                       'Length (roughly). : ', m, ' m<br/>',
-                                       '0 m means only 1 address', '<br/>',
-                                       '<a href="', gviewurl, '">Google Street View (if available)</a>'),
+                        popup = ~paste0('<b>', Finnish, ' ' , osoitenumero, '</b><br/>',
+                                        '<b>', Swedish, ' ', osoitenumero, '</b><br/>',
+                                        'Length, approx: ', m, ' m<br/>',
+                                        '<i>0 m</i> means that there is only one address on that street', '<br/>',
+                                        '<a href="', gviewurl, '">Google Street View (if available)</a>'),
                         clusterOptions = markerClusterOptions()) %>%
       fitBounds(.,
                 min(filteredStreets()$e), min(filteredStreets()$n),
