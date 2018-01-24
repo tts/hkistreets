@@ -23,7 +23,8 @@ ui <- bootstrapPage(
                                label = "Select up to 10 streets by name", 
                                choices = NULL, 
                                options = list(maxItems = 10)),
-                downloadButton("data_hki_streets", "Download")
+                downloadButton("data_hki_streets", "Download"),
+                HTML("<div><br/><a target='blank' href='http://tuijasonkkila.fi/blog/2018/01/streets-of-helsinki/'>About</a></div>")
   )
 )
 
@@ -82,7 +83,7 @@ server <- function(input, output, session) {
                                         '<b>', Swedish, ' ', osoitenumero, '</b><br/>',
                                         'Length, approx: ', m, ' m<br/>',
                                         '<i>0 m</i> means that there is only one address on that street', '<br/>',
-                                        '<a href="', gviewurl, '">Google Street View (if available)</a>'),
+                                        '<a target="blank" href="', gviewurl, '">Google Street View (if available)</a>'),
                         clusterOptions = markerClusterOptions()) %>%
       fitBounds(.,
                 min(filteredStreets()$e), min(filteredStreets()$n),
